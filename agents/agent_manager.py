@@ -11,12 +11,9 @@ from datetime import datetime
 
 from agents.base_agent import BaseAgent, AgentResponse
 from agents.root_agent import RootAgent
-from agents.general_support_agent import GeneralSupportAgent
-from agents.technical_support_agent import TechnicalSupportAgent
-from agents.billing_support_agent import BillingSupportAgent
-from agents.escalation_agent import EscalationAgent
 from utils.config import Config
 from utils.logger import LoggerMixin
+from utils.simple_database import SimpleDatabaseManager
 
 
 class AgentManager(LoggerMixin):
@@ -50,6 +47,7 @@ class AgentManager(LoggerMixin):
         self.agents: Dict[str, BaseAgent] = {}
         self.root_agent: RootAgent = None
         self.conversation_sessions: Dict[str, Dict[str, Any]] = {}
+        self.database_manager: SimpleDatabaseManager = None
 
         self.log_info("Initializing Agent Manager with ADK Root Agent")
 
@@ -61,24 +59,24 @@ class AgentManager(LoggerMixin):
         setting up the complete multi-agent support system with ADK architecture.
         """
         try:
-            # Initialize the root agent first
+            # Initialize database manager first
+            self.database_manager = SimpleDatabaseManager(self.config)
+            if not self.database_manager.connect():
+                self.log_warning(
+                    "Database connection failed, continuing without database functionality"
+                )
+            else:
+                self.database_manager.create_tables()
+                self.log_info("Database manager initialized successfully")
+
+            # Initialize the root agent with database access
             self.root_agent = RootAgent(self.config)
+            self.root_agent.database_manager = self.database_manager
 
-            # Initialize all specialized agents
-            self.agents = {
-                "general": GeneralSupportAgent(self.config),
-                "technical": TechnicalSupportAgent(self.config),
-                "billing": BillingSupportAgent(self.config),
-                "escalation": EscalationAgent(self.config),
-            }
+            # No specialized agents - only root agent handles everything
+            self.agents = {}
 
-            # Register all agents with the root agent following ADK patterns
-            for agent_type, agent in self.agents.items():
-                self.root_agent.register_sub_agent(agent_type, agent)
-
-            self.log_info(
-                f"Initialized root agent with {len(self.agents)} sub-agents: {list(self.agents.keys())}"
-            )
+            self.log_info("Initialized root agent with direct database access")
 
         except Exception as e:
             self.log_error(f"Failed to initialize agents: {e}")
@@ -143,13 +141,18 @@ class AgentManager(LoggerMixin):
         agent_scores = {}
 
         # Get confidence scores from all agents
+        self.log_info(f"Processing query: '{query}'")
         for agent_type, agent in self.agents.items():
             confidence = agent.can_handle_query(query)
             agent_scores[agent_type] = confidence
+            self.log_info(f"Agent {agent_type} confidence: {confidence}")
 
         # Find the agent with highest confidence
         best_agent_type = max(agent_scores, key=agent_scores.get)
         best_confidence = agent_scores[best_agent_type]
+        self.log_info(
+            f"Selected agent: {best_agent_type} with confidence: {best_confidence}"
+        )
 
         # Apply session-based adjustments
         if session.get("last_agent") and session["last_agent"] != best_agent_type:

@@ -86,6 +86,18 @@ LOG_FILE=logs/customer_support.log
 
 ## 🚀 Running the System
 
+### Database Setup (Required for Order Tracking)
+
+First, set up the development database:
+
+```bash
+# Install database dependencies
+pip install -r requirements.txt
+
+# Set up the database with sample data
+python setup_database.py
+```
+
 ### Start the Server (Traditional)
 
 ```bash
@@ -156,6 +168,17 @@ Agent: Escalation Agent
 Response: "I understand you'd like to speak with a human representative. Let me connect you with a supervisor..."
 ```
 
+### Order Tracking Queries
+```
+User: "What's the status of my order ORD-2024-001?"
+Agent: Order Tracking Agent
+Response: "I found your order ORD-2024-001. The current status is 'shipped'..."
+
+User: "Can you find my orders? My email is john.smith@email.com"
+Agent: Order Tracking Agent
+Response: "I found 2 orders for you. Your most recent order is ORD-2024-001..."
+```
+
 ## 🔧 WebSocket API
 
 ### Message Format
@@ -216,6 +239,8 @@ customer_support_agent/
 ├── test_client.py         # Test client for WebSocket
 ├── demo.py                # Demo script
 ├── setup.py               # Setup script
+├── setup_database.py      # Database setup script
+├── test_order_tracking.py # Order tracking test script
 ├── README.md              # This file
 ├── agents/                # AI Agents (ADK Pattern)
 │   ├── __init__.py
@@ -225,7 +250,14 @@ customer_support_agent/
 │   ├── general_support_agent.py
 │   ├── technical_support_agent.py
 │   ├── billing_support_agent.py
-│   └── escalation_agent.py
+│   ├── escalation_agent.py
+│   └── order_tracking_agent.py  # Order tracking agent
+├── utils/                 # Utilities
+│   ├── __init__.py
+│   ├── config.py          # Configuration management
+│   ├── logger.py          # Logging utilities
+│   └── database.py        # Database management
+```
 ├── websocket_server/      # WebSocket server
 │   ├── __init__.py
 │   └── server.py
@@ -324,4 +356,7 @@ For issues or questions:
 - **Advanced Analytics**: Implement conversation analytics and insights
 - **Integration APIs**: Add REST APIs for external system integration
 - **Mobile App**: Create mobile applications for customer support
-- **AI Training**: Implement continuous learning from conversations 
+- **AI Training**: Implement continuous learning from conversations
+- **Order Management**: Expand order tracking with inventory management
+- **Payment Integration**: Add payment processing and refund handling
+- **Shipping Integration**: Integrate with shipping carriers for real-time tracking 

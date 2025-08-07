@@ -5,4 +5,9 @@ python-dotenv==1.0.0
 pydantic==2.11.7
 pydantic-settings==2.2.1
 loguru==0.7.3
-typing-extensions==4.14.1 
+typing-extensions==4.14.1
+
+# Database dependencies for order tracking
+sqlalchemy==2.0.27
+alembic==1.13.1
+pg8000==1.30.5 

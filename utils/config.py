@@ -34,10 +34,16 @@ class Config(BaseSettings):
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
     log_file: str = Field(default="logs/customer_support.log", env="LOG_FILE")
 
-    # Database Configuration (for future use)
+    # Database Configuration (Development Database)
     database_url: str = Field(
-        default="sqlite:///./customer_support.db", env="DATABASE_URL"
+        default="postgresql://username:password@localhost:5432/dev_orders_db",
+        env="DATABASE_URL",
     )
+    database_host: str = Field(default="localhost", env="DATABASE_HOST")
+    database_port: int = Field(default=5432, env="DATABASE_PORT")
+    database_name: str = Field(default="dev_orders_db", env="DATABASE_NAME")
+    database_user: str = Field(default="username", env="DATABASE_USER")
+    database_password: str = Field(default="password", env="DATABASE_PASSWORD")
 
     class Config:
         """Pydantic configuration for environment variable loading."""
