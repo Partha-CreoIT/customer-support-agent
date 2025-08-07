@@ -83,7 +83,7 @@ async def test_websocket_client():
             # Cancel the listener task
             listener_task.cancel()
 
-            except websockets.exceptions.ConnectionClosed:
+    except websockets.exceptions.ConnectionClosed:
         print(
             "❌ Could not connect to server. Make sure the server is running on localhost:8765"
         )

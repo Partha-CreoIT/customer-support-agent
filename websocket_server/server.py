@@ -79,6 +79,9 @@ class WebSocketServer(LoggerMixin):
             # Keep the server running
             await self.server.wait_closed()
 
+        except asyncio.CancelledError:
+            self.log_info("WebSocket server cancelled, shutting down gracefully")
+            raise
         except Exception as e:
             self.log_error(f"Failed to start WebSocket server: {e}")
             raise
@@ -94,7 +97,7 @@ class WebSocketServer(LoggerMixin):
             websocket (WebSocketServerProtocol): The WebSocket connection
         """
         client_id = str(uuid.uuid4())
-        user_id = None
+        user_id = client_id  # Use client_id as user_id for consistency
 
         try:
             # Store client connection
@@ -107,7 +110,7 @@ class WebSocketServer(LoggerMixin):
                 "status": "connected",
                 "client_id": client_id,
                 "timestamp": datetime.now().isoformat(),
-                "message": "Welcome to our AI Customer Support! How can I help you today?",
+                "message": "Welcome to our AI Customer Support! I'll be your assistant today. How can I help you?",
             }
 
             await websocket.send(json.dumps(welcome_message))
@@ -205,7 +208,8 @@ class WebSocketServer(LoggerMixin):
             Dict[str, Any]: The agent's response
         """
         content = data.get("content", "")
-        user_id = data.get("user_id", client_id)
+        # Use client_id as user_id for consistency across the session
+        user_id = client_id
 
         if not content.strip():
             return {
@@ -370,9 +374,12 @@ class WebSocketServer(LoggerMixin):
         # Convert to JSON
         message_json = json.dumps(message)
 
+        # Create a copy of clients to avoid dictionary modification during iteration
+        clients_to_broadcast = list(self.clients.items())
+
         # Send to all clients
         disconnected_clients = []
-        for client_id, websocket in self.clients.items():
+        for client_id, websocket in clients_to_broadcast:
             try:
                 await websocket.send(message_json)
             except websockets.exceptions.ConnectionClosed:
@@ -396,8 +403,11 @@ class WebSocketServer(LoggerMixin):
         client connections.
         """
         try:
+            # Create a copy of clients to avoid dictionary modification during iteration
+            clients_to_close = list(self.clients.items())
+            
             # Close all client connections
-            for client_id, websocket in self.clients.items():
+            for client_id, websocket in clients_to_close:
                 try:
                     await websocket.close()
                 except Exception as e:

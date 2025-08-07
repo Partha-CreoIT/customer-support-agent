@@ -81,16 +81,22 @@ class ADKWebCommand:
             logger.error(f"Error in ADK web system: {e}")
             raise
         finally:
-            await self.cleanup()
+            try:
+                await self.cleanup()
+            except Exception as e:
+                logger.error(f"Error during cleanup: {e}")
 
     async def cleanup(self):
         """Cleanup ADK web system resources."""
         try:
             if self.websocket_server:
+                logger.info("Stopping WebSocket server...")
                 await self.websocket_server.stop()
+                logger.info("WebSocket server stopped successfully")
             logger.info("ADK Web System cleanup completed")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
+            # Don't raise the exception to avoid masking the original error
 
     def get_adk_info(self):
         """Get ADK-specific information."""
@@ -149,8 +155,18 @@ async def main():
             print("   Architecture: ADK Root Agent Pattern")
             print("   Press Ctrl+C to stop")
             print()
-            await adk_web.start()
+            try:
+                await adk_web.start()
+            except KeyboardInterrupt:
+                print("\n👋 Shutting down gracefully...")
+                sys.exit(0)
+            except Exception as e:
+                logger.error(f"ADK Web Command failed: {e}")
+                sys.exit(1)
 
+    except KeyboardInterrupt:
+        print("\n👋 Shutting down gracefully...")
+        sys.exit(0)
     except Exception as e:
         logger.error(f"ADK Web Command failed: {e}")
         sys.exit(1)
